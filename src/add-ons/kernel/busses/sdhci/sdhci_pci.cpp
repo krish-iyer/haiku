@@ -7,6 +7,10 @@
 
 #include "sdhci_pci.h"
 
+
+#define SDHCI_PCI_DEVICE_MODULE_NAME "busses/mmc/sdhci_pci/driver_v1"
+
+
 device_manager_info* gDeviceManager;
 
 static int
@@ -27,8 +31,8 @@ supports_device(device_node* parent)
 	if (strcmp(bus, "pci") != 0) 
 		return 0;
 
-	if(B_DEVICE_TYPE != 8 || B_DEVICE_SUBTYPE != 5 || B_DEVICE_INTERFACE != 1)
-		return 0;
+	/*if(get_attr_uint16(parent, B_DEVICE_TYPE, &deviceType, false) != 8 || get_attr_uint16(parent, B_DEVICE_SUBTYPE, &Subtype,false) != 5 || get_attr_uint16(parent, B_DEVICE_INTERFACE, &Interface, false) != 1)
+		return 0; */// At the moment not needed, it won't be able to detect the specific fake vendor
 
 	if (vendorID == SDHCI_PCI_VENDORID) { // check for vendor ID
 		if (deviceID < SDHCI_PCI_MAX_DEVICEID 
@@ -52,3 +56,24 @@ supports_device(device_node* parent)
 
 	return 0;
 }
+
+static driver_module_info sSDHCIPCIDriver = {
+	{
+		SDHCI_PCI_DEVICE_MODULE_NAME,
+		0,
+		NULL
+	},
+	supports_device,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+	NULL
+};
+
+module_info* modules[] = { 
+	(module_info* )&sSDHCIPCIDriver,
+	NULL
+};
+
