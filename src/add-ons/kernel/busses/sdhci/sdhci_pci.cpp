@@ -7,7 +7,7 @@
 
 #include "sdhci_pci.h"
 
-#ifdef TRACE_VIRTIO
+#ifdef TRACE_SDHCI
 #	define TRACE(x...) dprintf("\33[33mvirtio_pci:\33[0m " x)
 #else
 #	define TRACE(x...) ;
