@@ -5,5 +5,6 @@
 #define SDHCI_PCI_MIN_DEVICEID 0x0000
 #define SDHCI_PCI_MAX_DEVICEID 0x00ff
 
+#define SHDCI_PCI_SLOT_INFO 0x40
 
 #endif

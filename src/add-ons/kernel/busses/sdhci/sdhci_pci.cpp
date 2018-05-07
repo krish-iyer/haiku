@@ -19,7 +19,7 @@
 #define SDHCI_PCI_DEVICE_MODULE_NAME "busses/mmc/sdhci_pci/device/v1"
 
 typedef struct {
-	sdhci_sim sim;
+	sdhci_mmc_bus mmc_bus;
 	uint16 queue;
 } sdhci_pci_queue_cookie;
 
@@ -29,33 +29,17 @@ typedef struct {
 	addr_t base_addr;
 	uint8 irq;
 	sdhci_irq_type irq_type;
-	sdhci_sim sim;
+	sdhci_mmc_bus mmc_bus;
 	uint16 queue_count;
 
 	device_node* node;
 	pci_info info;
 
 	sdhci_pci_queue_cookie *cookies;
-} sdhci_pci_sim_info;
+} sdhci_pci_mmc_bus_info;
 
 device_manager_info* gDeviceManager;
 
-int32
-sdhci_pci_queue_interrupt(void *data)
-{
-	sdhci_pci_queue_cookie* cookie = (sdhci_pci_queue_cookie*)data;
-	gSDHCI->queue_interrupt_handler(cookie->sim, cookie->queue);
-	return B_HANDLED_INTERRUPT;
-
-}
-
-int32
-sdhci_pci_interrupt(void *data)
-{
-	sdhci_pci_sim_info* bus = (sdhci_pci_sim_info*)data;
-	uint8 isr = bus->pci->read_io_8(bus->device,
-		bus->base_addr) // incomplete
-}
 
 static void
 bus_removed(void* bus_cookie)
@@ -66,11 +50,9 @@ bus_removed(void* bus_cookie)
 static void
 uninit_bus(void* bus_cookie) {}
 
-static void 
-init_bus(void *bus_init){}
-
-
-
+static status_t 
+init_bus(device_node* node, void** bus_cookie)
+{}
 
 static status_t
 init_device(device_node* node, void** device_cookie)
@@ -80,7 +62,7 @@ init_device(device_node* node, void** device_cookie)
 	return B_OK;
 }
 
-static status_t
+/*static status_t
 register_child_devices(void* cookie)
 {
 	CALLED();
@@ -89,7 +71,7 @@ register_child_devices(void* cookie)
 	pci_device_module_info *pci;
 	pci_device* device; // incomplete 
 
-}
+}*/
 
 static status_t
 register_device(device_node* parent)
@@ -140,8 +122,9 @@ supports_device(device_node* parent)
 			(void**)&device);
 		uint8 pciSubDeviceId = pci->read_pci_config(device, PCI_revision,
 			1);
+		uint8 pciSlotsInfo = pci->read_pci_config(device, PCI_revision, SHDCI_PCI_SLOT_INFO);
 		// debug message 
-		TRACE("SDHCI Device found! vendor 0x%04x, device 0x%04x", vendorID, deviceID);
+		//TRACE("SDHCI Device found! vendor 0x%04x, device 0x%04x", vendorID, deviceID);
 
 
 		
@@ -151,10 +134,10 @@ supports_device(device_node* parent)
 	return 0;
 }
 
-static sdhci_sim_interface gSDHCIPCIDeviceModule = {
+static sdhci_mmc_bus_interface gSDHCIPCIDeviceModule = {
 	{
 		{
-			SDHCI_PCI_SIM_MODULE_NAME,
+			SDHCI_PCI_MMC_BUS_MODULE_NAME,
 			0,
 			NULL
 		},
