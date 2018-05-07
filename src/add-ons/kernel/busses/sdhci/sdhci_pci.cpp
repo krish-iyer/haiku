@@ -122,7 +122,7 @@ supports_device(device_node* parent)
 			(void**)&device);
 		uint8 pciSubDeviceId = pci->read_pci_config(device, PCI_revision,
 			1);
-		uint8 pciSlotsInfo = pci->read_pci_config(device, PCI_revision, SHDCI_PCI_SLOT_INFO);
+		uint8 pciSlotsInfo = pci->read_pci_config(device, SHDCI_PCI_SLOT_INFO, 1); // second parameter is for offset and third is of reading no of bytes
 		// debug message 
 		//TRACE("SDHCI Device found! vendor 0x%04x, device 0x%04x", vendorID, deviceID);
 
