@@ -1,0 +1,9 @@
+SubDir HAIKU_TOP src add-ons kernel busses mmc ;
+
+SubDirC++Flags -fno-rtti ;
+
+UsePrivateHeaders kernel mmc ;
+
+KernelAddon sdhci_pci :
+	sdhci_pci.cpp
+;
