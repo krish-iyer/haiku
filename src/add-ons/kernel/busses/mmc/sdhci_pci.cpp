@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <KernelExport.h>
+#include <errno.h>
 
 #include <bus/PCI.h>
 #include <device_manager.h>
@@ -18,7 +19,7 @@
 #define ERROR(x...)			dprintf("\33[33msdhci_pci:\33[0m " x)
 #define CALLED(x...)		TRACE("CALLED %s\n", __PRETTY_FUNCTION__)
 
-#define SDHCI_PCI_DEVICE_MODULE_NAME "busses/mmc/sdhci_pci/device/v1"
+#define SDHCI_PCI_DEVICE_MODULE_NAME "busses/mmc/sdhci_pci/driver_v1"
 
 /*typedef struct {
 	sdhci_mmc_bus mmc_bus;
@@ -67,7 +68,7 @@ init_device(device_node* node, void** device_cookie)
 static status_t
 register_child_devices(void* cookie)
 {
-	CALLED();
+	/*CALLED();
 	device_node* node = (device_node*)cookie;
 	device_node* parent = gDeviceManager-> get_parent_node(node);
 	pci_device_module_info *pci;
@@ -90,6 +91,7 @@ register_child_devices(void* cookie)
 	};
 
 	return gDeviceManager->register_node(node, SDHCI_PCI_MMC_BUS_MODULE_NAME, attrs, NULL, &node);
+*/
 }
 
 static status_t
@@ -115,12 +117,16 @@ supports_device(device_node* parent)
 
 	TRACE("Supports device started, first function has been loaded ");
 
-	if (gDeviceManager->get_attr_string(parent, B_DEVICE_BUS, &bus, false) != B_OK
-		|| gDeviceManager->get_attr_uint16(parent, B_DEVICE_VENDOR_ID,
-				&vendorID, false) < B_OK
-		|| gDeviceManager->get_attr_uint16(parent, B_DEVICE_ID, &deviceID,
-				false) < B_OK) {
-		return -1.0f;
+	if (gDeviceManager->get_attr_string(parent, B_DEVICE_BUS, &bus, false) == B_OK)
+	{
+		TRACE("Bus successfull, attribute value %s\n", gDeviceManager->get_attr_string(parent, B_DEVICE_BUS, &bus, false));
+	}
+	if( gDeviceManager->get_attr_uint16(parent, B_DEVICE_VENDOR_ID,&vendorID, false) < B_OK)
+	{
+		TRACE("Vendor ID failed, error %s\n", strerror(errno));
+	}
+	if(gDeviceManager->get_attr_uint16(parent, B_DEVICE_ID, &deviceID,false) < B_OK) {
+		TRACE("Device ID failed, error %s\n", strerror(errno));
 	}
 
 	if (strcmp(bus, "pci") != 0) 
