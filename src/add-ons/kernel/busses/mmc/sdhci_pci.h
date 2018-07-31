@@ -32,15 +32,31 @@
 #define SDHCI_BASE_CLOCK_DIV_4							2 << 8
 #define SDHCI_BASE_CLOCK_DIV_8							4 << 8
 #define SDHCI_BASE_CLOCK_DIV_16							8 << 8
-#define SDHCI_BASE_CLOCK_DIV_32							10 << 8
-#define SDHCI_BASE_CLOCK_DIV_64							20 << 8
-#define SDHCI_BASE_CLOCK_DIV_128						40 << 8
-#define SDHCI_BASE_CLOCK_DIV_256						80 << 8
+#define SDHCI_BASE_CLOCK_DIV_32							16 << 8
+#define SDHCI_BASE_CLOCK_DIV_64							32 << 8
+#define SDHCI_BASE_CLOCK_DIV_128						64 << 8
+#define SDHCI_BASE_CLOCK_DIV_256						128 << 8
 #define SDHCI_INTERNAL_CLOCK_ENABLE						1 << 0
 #define SDHCI_INTERNAL_CLOCK_STABLE						1 << 1
 #define SDHCI_SD_CLOCK_ENABLE							1 << 2
 #define SDHCI_SD_CLOCK_DISABLE							~(1 << 2)
+#define SDHCI_CLR_FREQ_SEL 								~(255 << 8)
+#define SDHCI_BUS_POWER_ON								1
+/* Interrupt registers */
+#define SDHCI_INT_CMD_CMP		1 				// command complete signal enable
+#define SDHCI_INT_TRANS_CMP		2				// transfer complete signal enable
+#define SDHCI_INT_CARD_INS 		64 				// card insertion signal enable
+#define SDHCI_INT_CARD_REM 		128 			// card removal signal enable
+#define SDHCI_INT_TIMEOUT		65536 			// Timeout error
+#define SDHCI_INT_CRC			131072 			// CRC error
+#define SDHCI_INT_END_BIT		262144 			// end bit error
+#define SDHCI_INT_INDEX 		524288			// index error
+#define SDHCI_INT_BUS_POWER		8388608 		// power fail
 
+#define	 SDHCI_INT_CMD_ERROR_MASK	(SDHCI_INT_TIMEOUT | \
+		SDHCI_INT_CRC | SDHCI_INT_END_BIT | SDHCI_INT_INDEX)
+
+#define SDHCI_INT_CMD_MASK 	(SDHCI_INT_CMD_CMP | SDHCI_INT_CMD_ERROR_MASK)
 
 
 struct registers {
@@ -63,20 +79,16 @@ struct registers {
 	volatile uint16_t clock_control;
 	volatile uint8_t timeout_control;
 	volatile uint8_t software_reset;
-	volatile uint16_t normal_interrupt_status;
-	volatile uint16_t error_interrupt_status;
-	volatile uint16_t normal_interrupt_status_enable;
-	volatile uint16_t error_interrupt_status_enable;
-	volatile uint16_t normal_interrupt_signal_enable;
-	volatile uint16_t error_interrupt_signal_enable;
+	volatile uint32_t interrupt_status;
+	volatile uint32_t interrupt_status_enable;
+	volatile uint32_t interrupt_signal_enable;
 	volatile uint16_t auto_cmd12_error_status;
-	volatile uint32_t : 32;
+	volatile uint16_t : 16;
 	volatile uint32_t capabilities;
 	volatile uint32_t capabilities_rsvd;
 	volatile uint32_t max_current_capabilities;
 	volatile uint32_t max_current_capabilities_rsvd;
-	volatile uint32_t : 32;
-	volatile uint32_t : 32;
+	volatile uint64_t padding[21];
 	volatile uint32_t : 32;
 	volatile uint16_t slot_interrupt_status;
 	volatile uint16_t host_control_version;
@@ -84,24 +96,25 @@ struct registers {
 
 typedef void* sdhci_mmc_bus;
 
+#define DELAY(n)	snooze(n)
+
 #define SDHCI_BUS_CONTROLLER_MODULE_NAME "bus_managers/mmc_bus/driver_v1"
 
 #define	MMC_BUS_MODULE_NAME "bus_managers/mmc_bus/device/v1"
 
 static void sdhci_register_dump(uint8_t, struct registers*);
 static void sdhci_reset(struct registers*);
-static void sdhci_set_clock(struct registers*);
+static void sdhci_set_clock(struct registers*, uint16_t);
 static void sdhci_set_power(struct registers*);
 static void sdhci_stop_clock(struct registers*);
+void sdhci_error_interrupt_recovery(struct registers*);
+
+status_t sdhci_generic_interrupt(void*);
 
 typedef struct {
 	driver_module_info info;
-	
 	void (*hey)();
 
-//		static void sdhci_register_dump(struct registers* regs);
-
 } sdhci_mmc_bus_interface;
-
 
 #endif

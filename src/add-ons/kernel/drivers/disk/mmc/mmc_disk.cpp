@@ -18,8 +18,7 @@
 #include <drivers/Drivers.h>
 #include <kernel/OS.h>
 
-#include <fs/devfs.h>
-
+// #include <fs/devfs.h>
 
 #define TRACE_MMC_DISK
 #ifdef TRACE_MMC_DISK
@@ -34,35 +33,37 @@
 #define MMC_DISK_DEVICE_MODULE_NAME "drivers/disk/mmc/mmc_disk/device_v1"
 #define MMC_DEVICE_ID_GENERATOR "mmc/device_id"
 
-static device_manager_info *sDeviceManager;
+static device_manager_info* sDeviceManager;
 
 
 static float
-mmc_disk_supports_device(device_node *parent)
-{
+mmc_disk_supports_device(device_node* parent) {
+
 	CALLED();
 	TRACE("mmc_disk supports device has started\n");
-	const char *bus;
-	//uint16 deviceType;
+	const char* bus;
+	// uint16 deviceType;
 
-	if(sDeviceManager->get_attr_string(parent, B_DEVICE_BUS, &bus, true) != B_OK)
+	if (sDeviceManager->get_attr_string(parent, B_DEVICE_BUS, &bus, true) != B_OK)
 		return -1;
 
-	if(strcmp(bus, "mmc") != 0)
-	{
-
+	if (strcmp(bus, "mmc") != 0) {
 		TRACE("bus value %s, parent: %p\n",bus, parent);
 		return 0.0;
-	}	
-
-	/*if(sDeviceManager->get_attr_uint16(parent, SDHCI_DEVICE_TYPE_ITEM,
+	}
+	
+	// used for checking Device type item but since we have attached our 
+	// attribute, "mmc" to the node. Hence not needed 
+	# if 0 
+	if (sDeviceManager->get_attr_uint16(parent, SDHCI_DEVICE_TYPE_ITEM,
 		&deviceType, true) != B_OK)
 	{
-		TRACE("device type in mmc_disk ! = B_OK, bus found: %s and attr val %d\n",bus,deviceType);
-
+		TRACE("device type in mmc_disk ! = B_OK, bus found: %s and attr val %d\n"
+		,bus,deviceType);
 		return 0.0;
-	}*/
-	
+	}
+	# endif
+
 	TRACE("sdhci device found, parent: %p\n", parent);
 
 	return 0.8;
@@ -70,21 +71,21 @@ mmc_disk_supports_device(device_node *parent)
 
 
 static status_t
-mmc_disk_register_device(device_node *node)
-{
+mmc_disk_register_device(device_node* node) {
+
 	CALLED();
 
 	device_attr attrs[] = {
 		{ NULL }
 	};
-
-	return sDeviceManager->register_node(node, MMC_DISK_DRIVER_MODULE_NAME, attrs, NULL, NULL);
+	return sDeviceManager->register_node(node
+		, MMC_DISK_DRIVER_MODULE_NAME, attrs, NULL, NULL);
 }
 
 
 static status_t
-mmc_disk_init_driver(device_node* node, void **cookie)
-{
+mmc_disk_init_driver(device_node* node, void** cookie) {
+
 	CALLED();
 	mmc_disk_driver_info* info = (mmc_disk_driver_info*)malloc(
 		sizeof(mmc_disk_driver_info));
@@ -102,23 +103,24 @@ mmc_disk_init_driver(device_node* node, void **cookie)
 
 
 static void
-mmc_disk_uninit_driver(void *_cookie)
-{
+mmc_disk_uninit_driver(void* _cookie) {
+
 	CALLED();
 	mmc_disk_driver_info* info = (mmc_disk_driver_info*)_cookie;
 	free(info);
 }
 
 
-static status_t 
-mmc_disk_register_child_devices(void *_cookie)
-{
+static status_t
+mmc_disk_register_child_devices(void* _cookie) {
+
 	CALLED();
 	mmc_disk_driver_info* info = (mmc_disk_driver_info*)_cookie;
 	status_t status;
 
 	int32 id = sDeviceManager->create_id(MMC_DEVICE_ID_GENERATOR);
-	if(id < 0)
+
+	if (id < 0)
 		return id;
 
 	char name[64];
@@ -147,8 +149,8 @@ struct driver_module_info sMMCDiskDriver = {
 	mmc_disk_init_driver,
 	mmc_disk_uninit_driver,
 	mmc_disk_register_child_devices,
-	NULL, //mmc_disk_rescan_child_devices,
-	NULL,	
+	NULL, // mmc_disk_rescan_child_devices,
+	NULL,
 };
 
 module_info* modules[] = {

@@ -36,17 +36,10 @@
 
 
 //#define TRACE_DEVICE_MANAGER
-/*#ifdef TRACE_DEVICE_MANAGER
+#ifdef TRACE_DEVICE_MANAGER
 #	define TRACE(a) dprintf a
 #else
 #	define TRACE(a) ;
-#endif
-*/
-#define TRACE_DEVICE_MANAGER
-#ifdef TRACE_DEVICE_MANAGER
-#	define TRACE(x...) dprintf("\33[33mdevice_manager:\33[0m " x)
-#else
-#	define TRACE(x...) ;
 #endif
 
 #define DEVICE_MANAGER_ROOT_NAME "system/devices_root/driver_v1"
@@ -600,8 +593,8 @@ register_node(device_node* parent, const char* moduleName,
 	if (newNode == NULL)
 		return B_NO_MEMORY;
 
-	//TRACE("%p: register node \"%s\", parent %p\n", newNode, moduleName,
-//		parent);
+	TRACE("%p: register node \"%s\", parent %p\n", newNode, moduleName,
+		parent);
 
 	status_t status = newNode->InitCheck();
 	if (status == B_OK)
@@ -630,7 +623,7 @@ register_node(device_node* parent, const char* moduleName,
 static status_t
 unregister_node(device_node* node)
 {
-	//TRACE("unregister_node(node %p)\n", node);
+	TRACE("unregister_node(node %p)\n", node);
 	RecursiveLocker _(sLock);
 
 	bool initialized = node->IsInitialized();
@@ -1153,7 +1146,7 @@ Device::UninitDevice()
 		return;
 	}
 
-//	TRACE("uninit driver for node %p\n", this);
+	TRACE("uninit driver for node %p\n", this);
 
 	if (Module()->uninit_device != NULL)
 		Module()->uninit_device(fDeviceData);
@@ -1217,7 +1210,7 @@ device_node::device_node(const char* moduleName, const device_attr* attrs)
 
 device_node::~device_node()
 {
-//	TRACE("delete node %p\n", this);
+	TRACE("delete node %p\n", this);
 	ASSERT(DriverModule() == NULL);
 
 	if (Parent() != NULL) {
@@ -1341,7 +1334,7 @@ device_node::UninitDriver()
 		return false;
 	}
 
-//	TRACE("uninit driver for node %p\n", this);
+	TRACE("uninit driver for node %p\n", this);
 
 	if (fDriver->uninit_driver != NULL)
 		fDriver->uninit_driver(fDriverData);
@@ -1480,8 +1473,8 @@ device_node::_RegisterFixed(uint32& registered)
 		status_t status = get_module(attr->value.string,
 			(module_info**)&driver);
 		if (status != B_OK) {
-		//	TRACE("register fixed child %s failed: %s\n", attr->value.string,
-		//		strerror(status));
+			TRACE("register fixed child %s failed: %s\n", attr->value.string,
+				strerror(status));
 			return status;
 		}
 
@@ -1515,7 +1508,7 @@ device_node::_AddPath(Stack<KPath*>& stack, const char* basePath,
 	if (status == B_OK)
 		status = stack.Push(path);
 
-	//TRACE("  add path: \"%s\", %" B_PRId32 "\n", path->Path(), status);
+	TRACE("  add path: \"%s\", %" B_PRId32 "\n", path->Path(), status);
 
 	if (status != B_OK)
 		delete path;
@@ -1528,7 +1521,7 @@ status_t
 device_node::_GetNextDriverPath(void*& cookie, KPath& _path)
 {
 	Stack<KPath*>* stack = NULL;
-//	TRACE("device manager successfully entered to _GetNextDriverPath \n");
+	TRACE("device manager successfully entered to _GetNextDriverPath \n");
 
 	if (cookie == NULL) {
 		// find all paths and add them
@@ -1546,7 +1539,6 @@ device_node::_GetNextDriverPath(void*& cookie, KPath& _path)
 			|| get_attr_uint16(this, B_DEVICE_SUB_TYPE, &subType, false)
 					!= B_OK)
 		{
-//			TRACE("device manager successfully declared bus as generic \n");
 			generic = true;
 		}
 
@@ -1555,15 +1547,12 @@ device_node::_GetNextDriverPath(void*& cookie, KPath& _path)
 		// TODO: maybe make this extendible via settings file?
 		switch (type) {
 			case PCI_mass_storage:
-				//TRACE("device manager successfully detected PCI_mass_storage\n");
 				switch (subType) {
 					case PCI_scsi:
-				//		TRACE("device manager successfully detected PCI_scsi scsi and virtio\n");
 						_AddPath(*stack, "busses", "scsi");
 						_AddPath(*stack, "busses", "virtio");
 						break;
 					case PCI_ide:
-				//		TRACE("device manager successfully detected PCI_mass_storage ide \n");
 						_AddPath(*stack, "busses", "ata");
 						_AddPath(*stack, "busses", "ide");
 						break;
@@ -1592,7 +1581,6 @@ device_node::_GetNextDriverPath(void*& cookie, KPath& _path)
 				}
 				break;
 			case PCI_network:
-				//TRACE("device manager successfully detected PCI_network net and virtio\n");
 				_AddPath(*stack, "drivers", "net");
 				_AddPath(*stack, "busses", "virtio");
 				break;
@@ -1628,7 +1616,6 @@ device_node::_GetNextDriverPath(void*& cookie, KPath& _path)
 					_AddPath(*stack, "busses/pci");
 					_AddPath(*stack, "bus_managers");
 				} else if (!generic) {
-			//		TRACE("device manager successfully detected default !generic value: %s\n",generic);
 					_AddPath(*stack, "busses", "virtio");
 					_AddPath(*stack, "drivers");
 				} else {
@@ -1640,7 +1627,6 @@ device_node::_GetNextDriverPath(void*& cookie, KPath& _path)
 							|| !strcmp(sGenericContextPath, "bus"))) {
 						_AddPath(*stack, "busses");
 					}
-			//		TRACE("device manager successfully detected default !generic else condition \n");
 					_AddPath(*stack, "drivers", sGenericContextPath);
 					_AddPath(*stack, "busses/scsi");
 					_AddPath(*stack, "busses/random");
@@ -1738,8 +1724,8 @@ device_node::_RegisterPath(const char* path)
 	while (_GetNextDriver(list, driver) == B_OK) {
 		float support = driver->supports_device(this);
 		if (support > 0.0) {
-		//	TRACE("  register module \"%s\", support %f\n", driver->info.name,
-		//		support);
+			TRACE("  register module \"%s\", support %f\n", driver->info.name,
+				support);
 			if (driver->register_device(this) == B_OK)
 				count++;
 		}
@@ -1791,8 +1777,8 @@ device_node::_RegisterDynamic(device_node* previous)
 		}
 
 		if (bestDriver != NULL) {
-		//	TRACE("  register best module \"%s\", support %f\n",
-		//		bestDriver->info.name, bestSupport);
+			TRACE("  register best module \"%s\", support %f\n",
+				bestDriver->info.name, bestSupport);
 			if (bestDriver->register_device(this) == B_OK) {
 				// There can only be one node of this driver
 				// (usually only one at all, but there might be a new driver
@@ -2282,7 +2268,7 @@ driver_module_info gDeviceGenericModule = {
 status_t
 device_manager_probe(const char* path, uint32 updateCycle)
 {
-//	TRACE("device_manager_probe(\"%s\")\n", path);
+	TRACE("device_manager_probe(\"%s\")\n", path);
 	RecursiveLocker _(sLock);
 
 	// first, publish directories in the driver directory
@@ -2295,7 +2281,7 @@ device_manager_probe(const char* path, uint32 updateCycle)
 status_t
 device_manager_init(struct kernel_args* args)
 {
-//	TRACE("device manager init\n");
+	TRACE("device manager init\n");
 
 	IOSchedulerRoster::Init();
 
