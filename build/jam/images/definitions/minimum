@@ -223,6 +223,7 @@ SYSTEM_ADD_ONS_BUS_MANAGERS = [ FFilterByBuildFeatures
 	pci ps2@x86,x86_64
 	random
 	usb
+	mmc_bus
 	virtio
 ] ;
 
